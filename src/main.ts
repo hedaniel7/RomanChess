@@ -18,9 +18,12 @@ let selected: number | null = null; // Feld der gewählten Figur
 let busy = false; // ein Zug läuft gerade (Animation oder Computer)
 
 board.init(boardElement);
-boardElement.addEventListener('pointerdown', (e) => tap(board.squareAt(e.clientX, e.clientY)));
+board.onTap(tap);
 document.querySelector('#new-game')!.addEventListener('click', newGame);
 document.querySelector('#undo')!.addEventListener('click', undo);
+document.querySelector('#view-standard')!.addEventListener('click', () => board.showView('standard'));
+document.querySelector('#view-bird')!.addEventListener('click', () => board.showView('bird'));
+document.querySelector('#view-shield-wall')!.addEventListener('click', () => board.showView('shieldWall'));
 newGame();
 
 function current(): Position {

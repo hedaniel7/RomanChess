@@ -16,7 +16,9 @@ npm run dev
 - Tippe eine römische Figur an. Felder, auf die sie darf, bekommen einen Punkt, Figuren, die sie schlagen kann, einen Ring.
 - Tippe ein markiertes Feld: Die Figur gleitet hin, ein Springer springt im Bogen.
 - Dann überlegen die Germanen kurz und ziehen. Beim Schlagen stößt der Angreifer zu, das Opfer kippt um und versinkt im Brett.
-- Oben steht der Stand: dein Zug, Schach, Schachmatt oder Patt. Unten: **Neues Spiel** und **Zug zurück** (nimmt deinen Zug samt Antwort zurück).
+- Mit einem Finger wischen dreht die Kamera ums Brett, zwei Finger zoomen (am Rechner: ziehen und Mausrad). Ein kurzer Tipp wählt weiterhin nur Figuren aus.
+- **Standard**, **Vogel** und **Schildmauer** fahren die Kamera sanft in drei feste Ansichten: schräg hinter Rom, von oben, tief von der Seite mit den Schilden schräg von vorne.
+- Oben steht der Stand: dein Zug, Schach, Schachmatt oder Patt. Ganz unten: **Neues Spiel** und **Zug zurück** (nimmt deinen Zug samt Antwort zurück).
 
 ```bash
 npm test
@@ -33,7 +35,7 @@ src/
 ├── rules.ts          Zentrum: Schachregeln. Stellung rein, legale Züge, neue Stellung, Schach/Matt/Patt raus
 ├── main.ts           Spielablauf: Tipp → Zug → Animation → Zug des Computers; Leiste und Status
 ├── ai.ts             Computergegner: Minimax mit Alpha-Beta, 3 Halbzüge, danach Schlagfolgen zu Ende gerechnet
-├── board.ts          three.js: Kamera, Licht, Brett, Figuren aufstellen, Markierungen, welches Feld getippt wurde
+├── board.ts          three.js: Kamera (drehen, zoomen, drei Ansichten), Licht, Brett, Figuren, Markierungen, Tipp oder Wischen
 ├── animate.ts        Gleiten, Springerbogen, Angriff, Umkippen, Versinken
 ├── pieces/
 │   ├── parts.ts      Farben, Grundformen, Sockel und die Abmachung, die jede Figur einhält
@@ -54,7 +56,7 @@ screenshot.png        das Bild oben
 Ein Zug läuft so durch die Dateien:
 
 ```text
-Tipp → board.squareAt → main.tap → rules.legalMoves
+Tipp → board.onTap → main.tap → rules.legalMoves
      → animate.animateMove → rules.makeMove → board.show
      → ai.bestMove → derselbe Weg für den Zug des Computers
 ```
@@ -100,11 +102,13 @@ Ausprobiert mit dem eigenen Bauern, als `.glb` exportiert: Er lädt so im Entwic
 - **Regeln selbst geschrieben** statt chess.js (DECISIONS.md): keine Abhängigkeit, und die Suche des Computers braucht schnelle Züge. Perft bestätigt die Regeln.
 - **Tests mit Node** (`node --test`) statt Vitest: Node 22 führt TypeScript direkt aus, eine Abhängigkeit weniger.
 - **Gezeichnet wird nur bei Änderungen**, nicht 60-mal pro Sekunde. Schach steht meistens still; das schont Akku und Wärme.
+- **Tippen oder Wischen** entscheidet sich beim Loslassen: weniger als 10 Pixel Bewegung ist ein Tipp, sonst hat die Kamera gedreht. Ein zweiter Finger macht nie einen Tipp daraus.
+- **Kamera ohne Nachlauf** (OrbitControls ohne Dämpfung): Sie bewegt sich nur, solange der Finger zieht. So braucht es keine Dauerschleife, gezeichnet wird weiter nur bei Änderungen.
 - **Der Computer rechnet im Hauptthread**, aber erst, wenn keine Animation läuft. Gemessen auf dem Server: Median 51 ms, langsamster Zug 0,5 s in einer Partie über 120 Halbzüge.
 
 ## Offene Fragen
 
-1. **Schildmauer: Maße oder Mauer?** Das Scutum ist jetzt halb so breit wie hoch (0,30 × 0,58 Feld). Bei 1 Feld Abstand bleibt zwischen zwei Schilden etwa 0,7 Feld Lücke, eine geschlossene Wand entsteht so nicht. So breit wie der Sockel (0,66) bliebe ein Drittel Feld Lücke, der Schild wäre dann aber fast so breit wie hoch. Dazu kommt: Die Kamera steht hinter Rom, man sieht die Schilde von hinten. Sollen die Römer zur Kamera schauen?
+1. **Schildmauer: Maße oder Mauer?** Das Scutum ist jetzt halb so breit wie hoch (0,30 × 0,58 Feld). Bei 1 Feld Abstand bleibt zwischen zwei Schilden etwa 0,7 Feld Lücke, eine geschlossene Wand entsteht so nicht. So breit wie der Sockel (0,66) bliebe ein Drittel Feld Lücke, der Schild wäre dann aber fast so breit wie hoch. Am besten zu sehen in der Ansicht **Schildmauer**.
 2. **Unterwegs spielen?** Ohne laufenden Rechner geht es nicht. Soll die Seite veröffentlicht werden, z. B. über GitHub Pages?
 3. **Zu zweit an einem Gerät** wieder einbauen, als Schalter in der Leiste?
 4. **Umwandlung mit Auswahl** (Dame, Turm, Läufer, Springer) oder bei Dame bleiben?

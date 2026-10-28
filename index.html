@@ -27,13 +27,20 @@
       #board {
         flex: 1;
         min-height: 0;
-        touch-action: none; /* kein Scrollen oder Zoomen beim Tippen aufs Brett */
+        touch-action: none; /* kein Scrollen oder Zoomen der Seite beim Wischen übers Brett */
       }
       nav {
         display: flex;
-        gap: 12px;
+        gap: 10px;
         justify-content: center;
-        padding: 8px 16px calc(env(safe-area-inset-bottom) + 14px);
+        padding: 6px 16px;
+      }
+      #actions {
+        padding-bottom: calc(env(safe-area-inset-bottom) + 14px);
+      }
+      #views button {
+        font-size: 15px;
+        padding: 6px 12px;
       }
       button {
         font: inherit;
@@ -49,7 +56,12 @@
   <body>
     <p id="status"></p>
     <div id="board"></div>
-    <nav>
+    <nav id="views">
+      <button id="view-standard">Standard</button>
+      <button id="view-bird">Vogel</button>
+      <button id="view-shield-wall">Schildmauer</button>
+    </nav>
+    <nav id="actions">
       <button id="new-game">Neues Spiel</button>
       <button id="undo">Zug zurück</button>
     </nav>

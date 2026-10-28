@@ -3,6 +3,7 @@
 // Gezeichnet wird nur, wenn sich etwas ändert (render), nicht in einer Dauerschleife.
 
 import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { colorOf, fileOf, rankOf, type Color, type Piece, type Position } from './rules.ts';
 import { bishop } from './pieces/bishop.ts';
 import { king } from './pieces/king.ts';
@@ -22,9 +23,31 @@ const boardTop = makeBoardTop();
 const pieces = new THREE.Group(); // Figuren der aktuellen Stellung
 const marks = new THREE.Group(); // Auswahl und legale Ziele
 
+// Kamera drehen und zoomen. Ein Finger dreht, zwei Finger zoomen (so ist OrbitControls voreingestellt).
+// Verschieben ist aus, darum bleibt das Ziel die Brettmitte.
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enablePan = false;
+controls.maxPolarAngle = 1.35; // nicht tiefer als gut 10° über dem Brett
+controls.addEventListener('change', render);
+
+// Abstand, bei dem das ganze Brett ins Bild passt. Hängt vom Bildschirm ab, siehe resize.
+let fit = 1;
+
+// Die drei Ansichten. polar: Winkel von senkrecht oben; azimuth: Drehung ums Brett, 0 = hinter Rom;
+// distance: Abstand als Vielfaches von `fit`.
+const VIEWS = {
+  standard: { polar: 0.56, azimuth: 0, distance: 1 }, // schräg hinter Rom
+  bird: { polar: 0.001, azimuth: 0, distance: 1 }, // von oben
+  shieldWall: { polar: 1.2, azimuth: 2.0, distance: 1.1 }, // tief und seitlich, Schilde schräg von vorne
+};
+export type View = keyof typeof VIEWS;
+
 export function init(container: HTMLElement) {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 3x kostet auf dem iPhone viel, bringt wenig
   container.append(renderer.domElement);
+  const start = VIEWS.standard;
+  camera.position.setFromSphericalCoords(fit, start.polar, start.azimuth); // resize skaliert auf den richtigen Abstand
+  controls.update();
 
   scene.background = new THREE.Color('#1c1d21');
   scene.add(new THREE.HemisphereLight('#fff6e8', '#4a4038', 1.6));
@@ -67,6 +90,40 @@ export function select(from: number | null, targets: number[]) {
   render();
 }
 
+// Ruft `handler` mit dem angetippten Feld auf. Entschieden wird beim Loslassen:
+// Hat sich der Finger kaum bewegt, war es ein Tipp, sonst hat er die Kamera gedreht.
+// Ein zweiter Finger (Zoomen) macht aus der Berührung nie einen Tipp.
+export function onTap(handler: (sq: number | null) => void) {
+  let pressedAt: { x: number; y: number } | null = null;
+  renderer.domElement.addEventListener('pointerdown', (e) => {
+    pressedAt = e.isPrimary ? { x: e.clientX, y: e.clientY } : null;
+  });
+  renderer.domElement.addEventListener('pointerup', (e) => {
+    if (pressedAt && Math.hypot(e.clientX - pressedAt.x, e.clientY - pressedAt.y) < 10) {
+      handler(squareAt(e.clientX, e.clientY));
+    }
+    pressedAt = null;
+  });
+}
+
+// Fährt die Kamera sanft in eine der drei Ansichten. Während der Fahrt ist Drehen aus.
+export async function showView(name: View) {
+  if (!controls.enabled) return; // es läuft schon eine Fahrt
+  const from = new THREE.Spherical().setFromVector3(camera.position);
+  const to = VIEWS[name];
+  const turn = Math.atan2(Math.sin(to.azimuth - from.theta), Math.cos(to.azimuth - from.theta)); // kürzerer Weg
+  controls.enabled = false;
+  await tween(0.8, (t) => {
+    const e = smooth(t);
+    const distance = THREE.MathUtils.lerp(from.radius, to.distance * fit, e);
+    const polar = THREE.MathUtils.lerp(from.phi, to.polar, e);
+    camera.position.setFromSphericalCoords(distance, polar, from.theta + turn * e);
+    camera.lookAt(controls.target);
+  });
+  controls.enabled = true;
+  controls.update();
+}
+
 // Welches Feld liegt unter dem Finger oder Mauszeiger? null, wenn keins.
 export function squareAt(clientX: number, clientY: number): number | null {
   const rect = renderer.domElement.getBoundingClientRect();
@@ -90,18 +147,44 @@ export function render() {
   renderer.render(scene, camera);
 }
 
-// Feste, leicht schräge Sicht von der Seite Roms. Der Abstand passt sich dem Bildschirm an,
-// damit das Brett im Hochformat in die Breite und im Querformat in die Höhe passt.
+// Ruft step(t) bei jedem Bild auf und zeichnet; t läuft in `seconds` Sekunden von 0 bis 1.
+// Für Figuren (animate.ts) und Kamerafahrten.
+export function tween(seconds: number, step: (t: number) => void): Promise<void> {
+  return new Promise((resolve) => {
+    let start: number | undefined;
+    function frame(now: number) {
+      start ??= now; // Zeit des ersten Bildes
+      const t = Math.min((now - start) / (seconds * 1000), 1);
+      step(t);
+      render();
+      if (t < 1) requestAnimationFrame(frame);
+      else resolve();
+    }
+    requestAnimationFrame(frame);
+  });
+}
+
+// Langsam anfahren, langsam abbremsen.
+export function smooth(t: number): number {
+  return t * t * (3 - 2 * t);
+}
+
+// Passt Bildgröße und Kamera an den Bildschirm an. `fit` ist der Abstand, bei dem das Brett
+// im Hochformat in die Breite und im Querformat in die Höhe passt. Blickrichtung und Zoom
+// bleiben erhalten, nur im Verhältnis zum neuen `fit`. Die Zoomgrenzen hängen ebenfalls an `fit`.
 function resize(container: HTMLElement) {
   const width = container.clientWidth;
   const height = container.clientHeight;
   renderer.setSize(width, height);
   camera.aspect = width / height;
-  const halfHeight = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-  const distance = Math.max(5.0 / (halfHeight * camera.aspect), 4.6 / halfHeight);
-  camera.position.set(0, 1.6, 1).normalize().multiplyScalar(distance);
-  camera.lookAt(0, 0, 0.3);
   camera.updateProjectionMatrix();
+  const halfHeight = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  const previousFit = fit;
+  fit = Math.max(5.0 / (halfHeight * camera.aspect), 4.6 / halfHeight);
+  controls.minDistance = 0.5 * fit;
+  controls.maxDistance = 1.3 * fit;
+  camera.position.multiplyScalar(fit / previousFit); // Ziel ist der Ursprung, also skaliert das den Abstand
+  controls.update();
   render();
 }
 

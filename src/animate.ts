@@ -32,8 +32,8 @@ export async function animateMove(pos: Position, move: Move) {
 
 function slide(figure: THREE.Object3D, to: THREE.Vector3, hop = 0): Promise<void> {
   const from = figure.position.clone();
-  return tween(0.25 + 0.08 * from.distanceTo(to), (t) => {
-    const e = smooth(t);
+  return board.tween(0.25 + 0.08 * from.distanceTo(to), (t) => {
+    const e = board.smooth(t);
     figure.position.lerpVectors(from, to, e);
     figure.position.y = hop * Math.sin(Math.PI * e);
   });
@@ -44,7 +44,7 @@ function lunge(figure: THREE.Object3D, direction: THREE.Vector3): Promise<void> 
   const start = figure.position.clone();
   const rest = figure.quaternion.clone();
   const axis = UP.clone().cross(direction); // kippt die Oberseite in Richtung `direction`
-  return tween(0.3, (t) => {
+  return board.tween(0.3, (t) => {
     const k = Math.sin(Math.PI * t); // 0 → 1 → 0
     figure.position.copy(start).addScaledVector(direction, 0.25 * k);
     figure.quaternion.setFromAxisAngle(axis, 0.35 * k).multiply(rest);
@@ -57,7 +57,7 @@ function topple(figure: THREE.Object3D, direction: THREE.Vector3): Promise<void>
   const rest = figure.quaternion.clone();
   const axis = UP.clone().cross(direction);
   const edge = 0.35; // Abstand von der Mitte bis zur Kippkante
-  return tween(0.4, (t) => {
+  return board.tween(0.4, (t) => {
     const angle = (Math.PI / 2) * t * t;
     figure.quaternion.setFromAxisAngle(axis, angle).multiply(rest);
     figure.position.copy(start).addScaledVector(direction, edge * (1 - Math.cos(angle)));
@@ -68,28 +68,7 @@ function topple(figure: THREE.Object3D, direction: THREE.Vector3): Promise<void>
 // Versinkt im Brett und verschwindet.
 function sink(figure: THREE.Object3D): Promise<void> {
   const startY = figure.position.y;
-  return tween(0.35, (t) => {
+  return board.tween(0.35, (t) => {
     figure.position.y = startY - 0.9 * t;
   });
-}
-
-// Ruft step(t) bei jedem Bild auf, t läuft in `seconds` Sekunden von 0 bis 1.
-function tween(seconds: number, step: (t: number) => void): Promise<void> {
-  return new Promise((resolve) => {
-    let start: number | undefined;
-    function frame(now: number) {
-      start ??= now; // Zeit des ersten Bildes
-      const t = Math.min((now - start) / (seconds * 1000), 1);
-      step(t);
-      board.render();
-      if (t < 1) requestAnimationFrame(frame);
-      else resolve();
-    }
-    requestAnimationFrame(frame);
-  });
-}
-
-// Langsam anfahren, langsam abbremsen.
-function smooth(t: number): number {
-  return t * t * (3 - 2 * t);
 }
