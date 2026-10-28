@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Roman Chess</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #1c1d21;
+        color: #f1e3c0;
+        font-family: system-ui, sans-serif;
+      }
+      body {
+        display: flex;
+        flex-direction: column;
+        height: 100dvh;
+      }
+      #status {
+        margin: 0;
+        padding: calc(env(safe-area-inset-top) + 12px) 16px 8px;
+        text-align: center;
+        font-size: 18px;
+      }
+      #board {
+        flex: 1;
+        min-height: 0;
+        touch-action: none; /* kein Scrollen oder Zoomen beim Tippen aufs Brett */
+      }
+      nav {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        padding: 8px 16px calc(env(safe-area-inset-bottom) + 14px);
+      }
+      button {
+        font: inherit;
+        font-size: 17px;
+        padding: 10px 18px;
+        border: 1px solid #a8862f;
+        border-radius: 10px;
+        background: #2a2b31;
+        color: inherit;
+      }
+    </style>
+  </head>
+  <body>
+    <p id="status"></p>
+    <div id="board"></div>
+    <nav>
+      <button id="new-game">Neues Spiel</button>
+      <button id="undo">Zug zurück</button>
+    </nav>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
