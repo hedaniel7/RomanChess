@@ -108,8 +108,7 @@ Ausprobiert mit dem eigenen Bauern, als `.glb` exportiert: Er lädt so im Entwic
 
 ## Offene Fragen
 
-1. **Schildmauer: Maße oder Mauer?** Das Scutum ist jetzt halb so breit wie hoch (0,30 × 0,58 Feld). Bei 1 Feld Abstand bleibt zwischen zwei Schilden etwa 0,7 Feld Lücke, eine geschlossene Wand entsteht so nicht. So breit wie der Sockel (0,66) bliebe ein Drittel Feld Lücke, der Schild wäre dann aber fast so breit wie hoch. Am besten zu sehen in der Ansicht **Schildmauer**.
-2. **Unterwegs spielen?** Ohne laufenden Rechner geht es nicht. Soll die Seite veröffentlicht werden, z. B. über GitHub Pages?
-3. **Zu zweit an einem Gerät** wieder einbauen, als Schalter in der Leiste?
-4. **Umwandlung mit Auswahl** (Dame, Turm, Läufer, Springer) oder bei Dame bleiben?
-5. **Stärke des Computers:** so lassen oder stärker machen (Rechnen im Hintergrund per Web Worker, tiefere Suche, Stufen)?
+1. **Unterwegs spielen?** Ohne laufenden Rechner geht es nicht. Soll die Seite veröffentlicht werden, z. B. über GitHub Pages?
+2. **Zu zweit an einem Gerät** wieder einbauen, als Schalter in der Leiste?
+3. **Umwandlung mit Auswahl** (Dame, Turm, Läufer, Springer) oder bei Dame bleiben?
+4. **Stärke des Computers:** so lassen oder stärker machen (Rechnen im Hintergrund per Web Worker, tiefere Suche, Stufen)?
