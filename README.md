@@ -11,6 +11,8 @@ npm run dev
 
 `npm run dev` startet Vite, einen kleinen Entwicklungsserver. Er zeigt zwei Adressen: `Local:` für den Browser am Rechner, `Network:` für iPhone oder iPad im selben WLAN.
 
+Ohne eigenen Rechner: **https://hedaniel7.github.io/RomanChess/**. GitHub baut die Seite bei jedem Push auf `main` neu und veröffentlicht sie (`.github/workflows/pages.yml`). Einmalig nötig: im Repo unter Settings → Pages bei Source „GitHub Actions“ wählen.
+
 <img src="screenshot.png" width="300" alt="Spiel auf dem iPhone: Brett mit römischen und germanischen Figuren, Läufer gewählt">
 
 - Tippe eine römische Figur an. Felder, auf die sie darf, bekommen einen Punkt, Figuren, die sie schlagen kann, einen Ring.
@@ -26,7 +28,7 @@ npm test
 
 12 Tests mit Nodes eingebautem Test-Runner. Perft zählt alle Zugfolgen bis zu einer Tiefe: Die Startstellung muss 20, 400, 8902 ergeben, drei weitere Stellungen prüfen Rochade, en passant und Umwandlung. Dazu Einzeltests für Sonderregeln, Matt und Patt sowie drei Tests für den Computergegner.
 
-`npm run build` prüft die Typen und legt die fertige Seite in `dist/`.
+`npm run build` prüft die Typen und legt die fertige Seite in `dist/`. `--base=./` macht alle Pfade relativ, so läuft sie auch unter `/RomanChess/` auf GitHub Pages.
 
 ## Dateien, Zentrum zuerst
 
@@ -50,6 +52,7 @@ src/
 index.html            Seite: Statuszeile, Brett, Leiste
 package.json          npm-Befehle; Abhängigkeit: three, zum Entwickeln vite, typescript und Typen
 tsconfig.json         Einstellungen für die Typprüfung
+.github/workflows/pages.yml   bei jedem Push auf main: testen, bauen, auf GitHub Pages veröffentlichen
 screenshot.png        das Bild oben
 ```
 
@@ -65,7 +68,7 @@ Tipp → board.onTap → main.tap → rules.legalMoves
 
 Jede Figur-Datei exportiert eine Funktion `(color) => THREE.Object3D`. Wer sie ersetzt, muss nur diese Funktion anders füllen. Beispiel für den Bauern:
 
-1. Modelle nach `public/models/` legen, z. B. `legionaer.glb` und `germane.glb`. Vite liefert `public/` unter `/` aus.
+1. Modelle nach `public/models/` legen, z. B. `legionaer.glb` und `germane.glb`. Vite liefert `public/` neben der Seite aus; der Pfad beginnt mit `./`, damit er auch auf GitHub Pages stimmt.
 2. Inhalt von `src/pieces/pawn.ts` ersetzen:
 
 ```ts
@@ -74,8 +77,8 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import type { Color } from '../rules.ts';
 
 const loader = new GLTFLoader();
-const legionary = (await loader.loadAsync('/models/legionaer.glb')).scene;
-const warrior = (await loader.loadAsync('/models/germane.glb')).scene;
+const legionary = (await loader.loadAsync('./models/legionaer.glb')).scene;
+const warrior = (await loader.loadAsync('./models/germane.glb')).scene;
 
 export function pawn(color: Color): THREE.Object3D {
   return new THREE.Group().add((color === 'w' ? legionary : warrior).clone());
@@ -108,7 +111,6 @@ Ausprobiert mit dem eigenen Bauern, als `.glb` exportiert: Er lädt so im Entwic
 
 ## Offene Fragen
 
-1. **Unterwegs spielen?** Ohne laufenden Rechner geht es nicht. Soll die Seite veröffentlicht werden, z. B. über GitHub Pages?
-2. **Zu zweit an einem Gerät** wieder einbauen, als Schalter in der Leiste?
-3. **Umwandlung mit Auswahl** (Dame, Turm, Läufer, Springer) oder bei Dame bleiben?
-4. **Stärke des Computers:** so lassen oder stärker machen (Rechnen im Hintergrund per Web Worker, tiefere Suche, Stufen)?
+1. **Zu zweit an einem Gerät** wieder einbauen, als Schalter in der Leiste?
+2. **Umwandlung mit Auswahl** (Dame, Turm, Läufer, Springer) oder bei Dame bleiben?
+3. **Stärke des Computers:** so lassen oder stärker machen (Rechnen im Hintergrund per Web Worker, tiefere Suche, Stufen)?
