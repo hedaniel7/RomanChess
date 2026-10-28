@@ -3,7 +3,13 @@
 // Gezeichnet wird nur, wenn sich etwas ändert (render), nicht in einer Dauerschleife.
 
 import * as THREE from 'three';
-import { colorOf, fileOf, rankOf, type Piece, type Position } from './rules.ts';
+import { colorOf, fileOf, rankOf, type Color, type Piece, type Position } from './rules.ts';
+import { bishop } from './pieces/bishop.ts';
+import { king } from './pieces/king.ts';
+import { knight } from './pieces/knight.ts';
+import { pawn } from './pieces/pawn.ts';
+import { queen } from './pieces/queen.ts';
+import { rook } from './pieces/rook.ts';
 
 const LIGHT_SQUARE = '#e6e0d2'; // heller Marmor
 const DARK_SQUARE = '#5f6a73'; // Schiefer
@@ -41,7 +47,7 @@ export function show(pos: Position) {
     if (!piece) return;
     const figure = makeFigure(piece);
     figure.position.copy(squareCenter(sq));
-    if (colorOf(piece) === 'b') figure.rotation.y = Math.PI; // Schwarz schaut zur Kamera
+    if (colorOf(piece) === 'b') figure.rotation.y = Math.PI + disorder(sq); // Schwarz schaut zur Kamera
     figure.userData.square = sq;
     pieces.add(figure);
   });
@@ -139,17 +145,20 @@ function mark(shape: THREE.BufferGeometry, sq: number): THREE.Mesh {
   return mesh;
 }
 
-// Platzhalter, bis die Figuren gebaut sind: ein Zylinder, die Höhe zeigt den Typ.
-const HEIGHT: Record<string, number> = { p: 0.45, r: 0.6, n: 0.7, b: 0.8, q: 0.95, k: 1.05 };
-const WHITE = new THREE.MeshLambertMaterial({ color: '#b3261e' });
-const BLACK = new THREE.MeshLambertMaterial({ color: '#6b4f33' });
+// Germanen stehen nicht in Reih und Glied: jede Figur etwas gedreht, je nach Feld anders.
+function disorder(sq: number): number {
+  return (((sq * 7) % 5) - 2) * 0.08;
+}
+
+// Eine Datei pro Figurentyp, alle mit derselben Schnittstelle (siehe pieces/parts.ts).
+const BUILDERS: Record<string, (color: Color) => THREE.Object3D> = {
+  p: pawn, n: knight, b: bishop, r: rook, q: queen, k: king,
+};
+
+// Jede Figur wird einmal gebaut und danach geklont. Klone teilen Geometrie und Material.
+const templates = new Map<Piece, THREE.Object3D>();
 
 function makeFigure(piece: Piece): THREE.Object3D {
-  const height = HEIGHT[piece.toLowerCase()];
-  const body = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.22, 0.32, height, 16),
-    colorOf(piece) === 'w' ? WHITE : BLACK,
-  );
-  body.position.y = height / 2;
-  return new THREE.Group().add(body);
+  if (!templates.has(piece)) templates.set(piece, BUILDERS[piece.toLowerCase()](colorOf(piece)));
+  return templates.get(piece)!.clone();
 }
