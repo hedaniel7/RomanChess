@@ -4,6 +4,7 @@
 
 import { START, colorOf, fromFen, legalMoves, makeMove, status, type Move, type Position } from './rules.ts';
 import { bestMove } from './ai.ts';
+import { animateMove } from './animate.ts';
 import * as board from './board.ts';
 
 const COMPUTER = 'b';
@@ -14,7 +15,7 @@ const boardElement = document.querySelector<HTMLElement>('#board')!;
 
 let history: Position[] = [];
 let selected: number | null = null; // Feld der gewählten Figur
-let busy = false; // der Computer rechnet
+let busy = false; // ein Zug läuft gerade (Animation oder Computer)
 
 board.init(boardElement);
 boardElement.addEventListener('pointerdown', (e) => tap(board.squareAt(e.clientX, e.clientY)));
@@ -41,15 +42,17 @@ function undo() {
 }
 
 // Erster Tipp wählt eine eigene Figur, zweiter Tipp auf ein markiertes Feld zieht.
-function tap(sq: number | null) {
+async function tap(sq: number | null) {
   const pos = current();
   if (busy || pos.turn === COMPUTER) return;
   const move = legalMoves(pos).find(
     (m) => m.from === selected && m.to === sq && (!m.promotion || m.promotion === 'q'), // Umwandlung: immer Dame
   );
   if (move) {
-    play(move);
-    if (!isOver()) computerTurn();
+    busy = true;
+    await play(move);
+    if (!isOver()) await computerTurn();
+    busy = false;
     return;
   }
   const piece = sq === null ? null : pos.board[sq];
@@ -59,14 +62,14 @@ function tap(sq: number | null) {
 }
 
 async function computerTurn() {
-  busy = true;
   statusText.textContent = 'Die Germanen überlegen …';
   await nextPaint(); // erst den Status zeigen, dann rechnen (die Suche blockiert kurz)
-  play(bestMove(current(), DEPTH));
-  busy = false;
+  await play(bestMove(current(), DEPTH));
 }
 
-function play(move: Move) {
+async function play(move: Move) {
+  board.select(null, []);
+  await animateMove(current(), move);
   history.push(makeMove(current(), move));
   refresh();
 }
