@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { START, fromFen, legalMoves, makeMove, square, status, type Position } from './rules.ts';
+import { START, fromFen, legalMoves, makeMove, san, square, status, type Position } from './rules.ts';
 
 // Perft zählt alle Zugfolgen bis zu einer Tiefe. Die Sollzahlen sind Referenzwerte
 // (chessprogramming.org, „Perft Results“). Fehlt eine Regel oder ist sie falsch, weicht die Zahl ab.
@@ -79,4 +79,46 @@ test('Status: Schach, Matt, Patt', () => {
   assert.equal(status(fromFen('rnb1kbnr/pppp1ppp/8/4p3/6Pq/5P2/PPPPP2P/RNBQKBNR w KQkq - 1 3')), 'checkmate');
   // Schwarz hat keinen Zug und steht nicht im Schach.
   assert.equal(status(fromFen('7k/5Q2/6K1/8/8/8/8/8 b - - 0 1')), 'stalemate');
+});
+
+// SAN: die Notation in der Zugliste. Aus einer Stellung den Zug von `from` nach `to` aufschreiben.
+function sanOf(fen: string, from: string, to: string): string {
+  const pos = fromFen(fen);
+  return san(pos, findMove(pos, from, to)!);
+}
+
+test('SAN: Partieanfang 1. e4 Nc6 2. Nf3 d5', () => {
+  let pos = fromFen(START);
+  const written: string[] = [];
+  for (const [from, to] of [['e2', 'e4'], ['b8', 'c6'], ['g1', 'f3'], ['d7', 'd5']]) {
+    const move = findMove(pos, from, to)!;
+    written.push(san(pos, move));
+    pos = makeMove(pos, move);
+  }
+  assert.deepEqual(written, ['e4', 'Nc6', 'Nf3', 'd5']);
+});
+
+test('SAN: Schlagen exd5', () => {
+  assert.equal(sanOf('rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 2', 'e4', 'd5'), 'exd5');
+});
+
+test('SAN: Schach + und Matt #', () => {
+  assert.equal(sanOf('rnbqkbnr/ppppp1pp/5p2/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2', 'd1', 'h5'), 'Qh5+');
+  assert.equal(sanOf('rnbqkbnr/pppp1ppp/8/4p3/6P1/5P2/PPPPP2P/RNBQKBNR b KQkq - 0 2', 'd8', 'h4'), 'Qh4#');
+});
+
+test('SAN: Rochade O-O und O-O-O', () => {
+  const fen = 'r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1';
+  assert.equal(sanOf(fen, 'e1', 'g1'), 'O-O');
+  assert.equal(sanOf(fen, 'e1', 'c1'), 'O-O-O');
+});
+
+test('SAN: Umwandlung e8=Q', () => {
+  assert.equal(sanOf('8/4P3/8/8/8/8/8/k6K w - - 0 1', 'e7', 'e8'), 'e8=Q');
+});
+
+test('SAN: Mehrdeutigkeit Nbd2 und R1a3', () => {
+  // Beide Springer (b1, f3) können nach d2, beide Türme (a1, a5) nach a3.
+  assert.equal(sanOf('4k3/8/8/8/8/5N2/8/1N2K3 w - - 0 1', 'b1', 'd2'), 'Nbd2');
+  assert.equal(sanOf('4k3/8/8/R7/8/8/8/R3K3 w - - 0 1', 'a1', 'a3'), 'R1a3');
 });

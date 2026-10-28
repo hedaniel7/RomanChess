@@ -36,6 +36,11 @@ export function square(name: string): number {
   return 'abcdefgh'.indexOf(name[0]) + (Number(name[1]) - 1) * 8;
 }
 
+// Name eines Feldes, z. B. 'e4'
+function squareName(sq: number): string {
+  return 'abcdefgh'[fileOf(sq)] + (rankOf(sq) + 1);
+}
+
 // Feldnummer aus Linie und Reihe, oder -1 außerhalb des Bretts.
 // board[-1] ist undefined, ein Feld außerhalb ist also nie besetzt.
 function at(file: number, rank: number): number {
@@ -83,6 +88,40 @@ export function status(pos: Position): Status {
   const canMove = legalMoves(pos).length > 0;
   if (inCheck(pos)) return canMove ? 'check' : 'checkmate';
   return canMove ? 'play' : 'stalemate';
+}
+
+// Ein Zug in internationaler Notation (SAN): e4, Nf3, exd5, O-O, e8=Q, Nbd2, Qh5+, Qh4#.
+// `pos` ist die Stellung vor dem Zug.
+export function san(pos: Position, move: Move): string {
+  const type = pos.board[move.from]!.toLowerCase();
+  const capture = move.captured !== undefined ? 'x' : '';
+  let text: string;
+  if (move.rookFrom !== undefined) {
+    text = move.to > move.from ? 'O-O' : 'O-O-O';
+  } else if (type === 'p') {
+    // Bauer: nur das Zielfeld; schlägt er, steht seine Linie davor
+    text = (capture ? squareName(move.from)[0] + 'x' : '') + squareName(move.to);
+    if (move.promotion) text += '=' + move.promotion.toUpperCase();
+  } else {
+    text = type.toUpperCase() + disambiguation(pos, move) + capture + squareName(move.to);
+  }
+  const after = status(makeMove(pos, move));
+  if (after === 'checkmate') return text + '#';
+  if (after === 'check') return text + '+';
+  return text;
+}
+
+// Können zwei gleiche Figuren auf dasselbe Feld, steht die Linie der ziehenden davor (Nbd2);
+// reicht die nicht, die Reihe (R1a3); sonst beides.
+function disambiguation(pos: Position, move: Move): string {
+  const rivals = legalMoves(pos).filter(
+    (m) => m.to === move.to && m.from !== move.from && pos.board[m.from] === pos.board[move.from],
+  );
+  if (rivals.length === 0) return '';
+  const [file, rank] = squareName(move.from);
+  if (rivals.every((m) => fileOf(m.from) !== fileOf(move.from))) return file;
+  if (rivals.every((m) => rankOf(m.from) !== rankOf(move.from))) return rank;
+  return file + rank;
 }
 
 // Führt einen Zug aus und gibt die neue Stellung zurück. Die alte bleibt unverändert.
