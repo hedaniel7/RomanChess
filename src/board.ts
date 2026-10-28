@@ -33,12 +33,11 @@ controls.addEventListener('change', render);
 // Abstand, bei dem das ganze Brett ins Bild passt. Hängt vom Bildschirm ab, siehe resize.
 let fit = 1;
 
-// Die drei Ansichten. polar: Winkel von senkrecht oben; azimuth: Drehung ums Brett, 0 = hinter Rom;
+// Die festen Ansichten. polar: Winkel von senkrecht oben; azimuth: Drehung ums Brett, 0 = hinter Rom;
 // distance: Abstand als Vielfaches von `fit`.
 const VIEWS = {
   standard: { polar: 0.56, azimuth: 0, distance: 1 }, // schräg hinter Rom
   bird: { polar: 0.001, azimuth: 0, distance: 1 }, // von oben
-  shieldWall: { polar: 1.2, azimuth: 2.0, distance: 1.1 }, // tief und seitlich, Schilde schräg von vorne
 };
 export type View = keyof typeof VIEWS;
 
@@ -106,7 +105,7 @@ export function onTap(handler: (sq: number | null) => void) {
   });
 }
 
-// Fährt die Kamera sanft in eine der drei Ansichten. Während der Fahrt ist Drehen aus.
+// Fährt die Kamera sanft in eine der festen Ansichten. Während der Fahrt ist Drehen aus.
 export async function showView(name: View) {
   if (!controls.enabled) return; // es läuft schon eine Fahrt
   const from = new THREE.Spherical().setFromVector3(camera.position);

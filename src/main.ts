@@ -1,8 +1,8 @@
 // Spielablauf: verbindet Regeln, Brett, Computergegner und Leiste.
 // Du spielst Rom (Weiß), der Computer die Germanen (Schwarz).
-// Die Stellungen des Spiels liegen in `history`; die letzte ist die aktuelle.
+// Das Spiel liegt in `history`: jede Stellung mit dem Zug (SAN), der zu ihr geführt hat.
 
-import { START, colorOf, fromFen, legalMoves, makeMove, status, type Move, type Position } from './rules.ts';
+import { START, colorOf, fromFen, legalMoves, makeMove, san, status, type Move, type Position } from './rules.ts';
 import { bestMove } from './ai.ts';
 import { animateMove } from './animate.ts';
 import * as board from './board.ts';
@@ -12,8 +12,9 @@ const DEPTH = 3; // Halbzüge, die der Computer vorausrechnet
 
 const statusText = document.querySelector('#status')!;
 const boardElement = document.querySelector<HTMLElement>('#board')!;
+const movesPanel = document.querySelector<HTMLElement>('#moves')!;
 
-let history: Position[] = [];
+let history: { pos: Position; san: string }[] = [];
 let selected: number | null = null; // Feld der gewählten Figur
 let busy = false; // ein Zug läuft gerade (Animation oder Computer)
 
@@ -23,16 +24,16 @@ document.querySelector('#new-game')!.addEventListener('click', newGame);
 document.querySelector('#undo')!.addEventListener('click', undo);
 document.querySelector('#view-standard')!.addEventListener('click', () => board.showView('standard'));
 document.querySelector('#view-bird')!.addEventListener('click', () => board.showView('bird'));
-document.querySelector('#view-shield-wall')!.addEventListener('click', () => board.showView('shieldWall'));
+document.querySelector('#toggle-moves')!.addEventListener('click', toggleMoves);
 newGame();
 
 function current(): Position {
-  return history[history.length - 1];
+  return history[history.length - 1].pos;
 }
 
 function newGame() {
   if (busy) return;
-  history = [fromFen(START)];
+  history = [{ pos: fromFen(START), san: '' }];
   refresh();
 }
 
@@ -72,8 +73,9 @@ async function computerTurn() {
 
 async function play(move: Move) {
   board.select(null, []);
-  await animateMove(current(), move);
-  history.push(makeMove(current(), move));
+  const pos = current();
+  await animateMove(pos, move);
+  history.push({ pos: makeMove(pos, move), san: san(pos, move) });
   refresh();
 }
 
@@ -87,6 +89,7 @@ function refresh() {
   board.select(null, []);
   board.show(current());
   showStatus();
+  showMoves();
 }
 
 function showStatus() {
@@ -98,6 +101,32 @@ function showStatus() {
     checkmate: `Schachmatt. ${winner}.`,
     stalemate: 'Patt. Unentschieden.',
   }[status(pos)];
+}
+
+// Zugliste: eine Zeile pro Zugpaar („1. e4 Nc6“), der letzte Zug hervorgehoben, ans Ende gescrollt.
+function showMoves() {
+  const written = history.slice(1).map((entry) => entry.san);
+  const last = written.length - 1;
+  const rows: HTMLElement[] = [];
+  for (let i = 0; i < written.length; i += 2) {
+    const row = document.createElement('div');
+    row.append(cell(`${i / 2 + 1}.`), cell(written[i], i === last), cell(written[i + 1] ?? '', i + 1 === last));
+    rows.push(row);
+  }
+  movesPanel.replaceChildren(...rows);
+  movesPanel.scrollTop = movesPanel.scrollHeight;
+}
+
+function cell(text: string, highlighted = false): HTMLElement {
+  const span = document.createElement('span');
+  span.textContent = text;
+  if (highlighted) span.className = 'last';
+  return span;
+}
+
+function toggleMoves() {
+  movesPanel.hidden = !movesPanel.hidden;
+  movesPanel.scrollTop = movesPanel.scrollHeight; // versteckt wirkt Scrollen nicht, darum beim Einblenden
 }
 
 // Wartet, bis der Browser einmal gezeichnet hat.

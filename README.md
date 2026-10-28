@@ -13,20 +13,21 @@ npm run dev
 
 Ohne eigenen Rechner: **https://hedaniel7.github.io/RomanChess/**. GitHub baut die Seite bei jedem Push auf `main` neu und veröffentlicht sie (`.github/workflows/pages.yml`). Einmalig nötig: im Repo unter Settings → Pages bei Source „GitHub Actions“ wählen.
 
-<img src="screenshot.png" width="300" alt="Spiel auf dem iPhone: Brett mit römischen und germanischen Figuren, Läufer gewählt">
+<img src="screenshot.png" width="300" alt="Spiel auf dem iPhone: Brett mit römischen und germanischen Figuren, Zugliste unten">
 
 - Tippe eine römische Figur an. Felder, auf die sie darf, bekommen einen Punkt, Figuren, die sie schlagen kann, einen Ring.
 - Tippe ein markiertes Feld: Die Figur gleitet hin, ein Springer springt im Bogen.
 - Dann überlegen die Germanen kurz und ziehen. Beim Schlagen stößt der Angreifer zu, das Opfer kippt um und versinkt im Brett.
 - Mit einem Finger wischen dreht die Kamera ums Brett, zwei Finger zoomen (am Rechner: ziehen und Mausrad). Ein kurzer Tipp wählt weiterhin nur Figuren aus.
-- **Standard**, **Vogel** und **Schildmauer** fahren die Kamera sanft in drei feste Ansichten: schräg hinter Rom, von oben, tief von der Seite mit den Schilden schräg von vorne.
+- **Standard** und **Vogel** fahren die Kamera sanft in zwei feste Ansichten: schräg hinter Rom und von oben.
+- **Moves** blendet die Zugliste ein und aus, in internationaler Notation (SAN): `1. e4 Nc6 2. Nf3 d5`, der letzte Zug hervorgehoben. Hochkant liegt sie halbtransparent unten über dem Brett, ein Tipp geht durch sie hindurch aufs Brett. Am Rechner steht sie rechts daneben.
 - Oben steht der Stand: dein Zug, Schach, Schachmatt oder Patt. Ganz unten: **Neues Spiel** und **Zug zurück** (nimmt deinen Zug samt Antwort zurück).
 
 ```bash
 npm test
 ```
 
-12 Tests mit Nodes eingebautem Test-Runner. Perft zählt alle Zugfolgen bis zu einer Tiefe: Die Startstellung muss 20, 400, 8902 ergeben, drei weitere Stellungen prüfen Rochade, en passant und Umwandlung. Dazu Einzeltests für Sonderregeln, Matt und Patt sowie drei Tests für den Computergegner.
+18 Tests mit Nodes eingebautem Test-Runner. Perft zählt alle Zugfolgen bis zu einer Tiefe: Die Startstellung muss 20, 400, 8902 ergeben, drei weitere Stellungen prüfen Rochade, en passant und Umwandlung. Dazu Einzeltests für Sonderregeln, Matt und Patt, sechs Tests für die Notation (Schach `+`, Matt `#`, `O-O`, `e8=Q`, `Nbd2`, `exd5`) und drei für den Computergegner.
 
 `npm run build` prüft die Typen und legt die fertige Seite in `dist/`. `--base=./` macht alle Pfade relativ, so läuft sie auch unter `/RomanChess/` auf GitHub Pages.
 
@@ -34,10 +35,10 @@ npm test
 
 ```text
 src/
-├── rules.ts          Zentrum: Schachregeln. Stellung rein, legale Züge, neue Stellung, Schach/Matt/Patt raus
-├── main.ts           Spielablauf: Tipp → Zug → Animation → Zug des Computers; Leiste und Status
+├── rules.ts          Zentrum: Schachregeln. Stellung rein, legale Züge, neue Stellung, Schach/Matt/Patt, Zug als SAN raus
+├── main.ts           Spielablauf: Tipp → Zug → Animation → Zug des Computers; Leiste, Status, Zugliste
 ├── ai.ts             Computergegner: Minimax mit Alpha-Beta, 3 Halbzüge, danach Schlagfolgen zu Ende gerechnet
-├── board.ts          three.js: Kamera (drehen, zoomen, drei Ansichten), Licht, Brett, Figuren, Markierungen, Tipp oder Wischen
+├── board.ts          three.js: Kamera (drehen, zoomen, zwei Ansichten), Licht, Brett, Figuren, Markierungen, Tipp oder Wischen
 ├── animate.ts        Gleiten, Springerbogen, Angriff, Umkippen, Versinken
 ├── pieces/
 │   ├── parts.ts      Farben, Grundformen, Sockel und die Abmachung, die jede Figur einhält
@@ -47,9 +48,9 @@ src/
 │   ├── bishop.ts     Läufer: Priester mit spitzer Kopfbedeckung
 │   ├── queen.ts      Dame: Zackenkrone
 │   └── king.ts       König: Reif und langer Stab, die höchste Figur
-├── rules.test.ts     Perft und Sonderregeln
+├── rules.test.ts     Perft, Sonderregeln, Notation
 └── ai.test.ts        Matt in einem Zug, freie Dame schlagen, keine Dame für einen Bauern geben
-index.html            Seite: Statuszeile, Brett, Leiste
+index.html            Seite: Statuszeile, Brett, Zugliste, Leiste
 package.json          npm-Befehle; Abhängigkeit: three, zum Entwickeln vite, typescript und Typen
 tsconfig.json         Einstellungen für die Typprüfung
 .github/workflows/pages.yml   bei jedem Push auf main: testen, bauen, auf GitHub Pages veröffentlichen
@@ -107,6 +108,8 @@ Ausprobiert mit dem eigenen Bauern, als `.glb` exportiert: Er lädt so im Entwic
 - **Gezeichnet wird nur bei Änderungen**, nicht 60-mal pro Sekunde. Schach steht meistens still; das schont Akku und Wärme.
 - **Tippen oder Wischen** entscheidet sich beim Loslassen: weniger als 10 Pixel Bewegung ist ein Tipp, sonst hat die Kamera gedreht. Ein zweiter Finger macht nie einen Tipp daraus.
 - **Kamera ohne Nachlauf** (OrbitControls ohne Dämpfung): Sie bewegt sich nur, solange der Finger zieht. So braucht es keine Dauerschleife, gezeichnet wird weiter nur bei Änderungen.
+- **Zugliste aus dem Spielverlauf:** Jede Stellung in `history` merkt sich den Zug, der zu ihr geführt hat. Zug zurück und Neues Spiel ändern nur `history`, die Liste wird daraus neu aufgebaut und bleibt so immer richtig.
+- **Hochkant lässt die Zugliste Tipps durch** (`pointer-events: none`), sonst wären Figuren unter ihr nicht wählbar. Von Hand scrollen geht dort nicht; sie zeigt immer die letzten Züge.
 - **Der Computer rechnet im Hauptthread**, aber erst, wenn keine Animation läuft. Gemessen auf dem Server: Median 51 ms, langsamster Zug 0,5 s in einer Partie über 120 Halbzüge.
 
 ## Offene Fragen
