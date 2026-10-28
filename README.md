@@ -104,7 +104,7 @@ Ausprobiert mit dem eigenen Bauern, als `.glb` exportiert: Er lädt so im Entwic
 
 ## Offene Fragen
 
-1. **Schildmauer von vorne?** Die Kamera steht hinter Rom, man sieht die Scuta also von hinten. Dreht man die Römer zur Kamera (oder die Kamera auf die Seite der Germanen), wirkt die Mauer viel stärker. Das hat sich beim glTF-Test gezeigt.
+1. **Schildmauer: Maße oder Mauer?** Das Scutum ist jetzt halb so breit wie hoch (0,30 × 0,58 Feld). Bei 1 Feld Abstand bleibt zwischen zwei Schilden etwa 0,7 Feld Lücke, eine geschlossene Wand entsteht so nicht. So breit wie der Sockel (0,66) bliebe ein Drittel Feld Lücke, der Schild wäre dann aber fast so breit wie hoch. Dazu kommt: Die Kamera steht hinter Rom, man sieht die Schilde von hinten. Sollen die Römer zur Kamera schauen?
 2. **Unterwegs spielen?** Ohne laufenden Rechner geht es nicht. Soll die Seite veröffentlicht werden, z. B. über GitHub Pages?
 3. **Zu zweit an einem Gerät** wieder einbauen, als Schalter in der Leiste?
 4. **Umwandlung mit Auswahl** (Dame, Turm, Läufer, Springer) oder bei Dame bleiben?

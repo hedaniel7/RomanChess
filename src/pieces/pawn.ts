@@ -1,5 +1,5 @@
-// Bauer. Rom: Legionär mit großem, gewölbtem Scutum und Speer. Der Schild ist so breit wie ein Feld,
-// so bilden die Bauern nebeneinander eine geschlossene Schildmauer.
+// Bauer. Rom: Legionär mit gewölbtem Scutum und Speer. Der Schild reicht vom Schienbein bis zur
+// Schulter (gut 60 % der Figur) und ist halb so breit wie hoch; Kopf, Helm und Speerspitze ragen darüber.
 // Germanen: Krieger mit Rundschild, Fellumhang und schräg gehaltenem Speer.
 
 import * as THREE from 'three';
@@ -31,10 +31,10 @@ function legionary(): THREE.Object3D {
     ball(SKIN, 0.08, 0, 0.78, 0), // Kopf
     dome(GOLD, 0.088, 0, 0.79, 0), // Helm
     box(RED, 0.025, 0.06, 0.15, 0, 0.9, 0), // Helmbusch
-    shell(RED, 0.62, 0.98, 0.6, 0, 0.44, -0.24), // Scutum
-    shell(GOLD, 0.63, 0.99, 0.035, 0, 0.74, -0.25), // goldener Rand oben und unten
-    shell(GOLD, 0.63, 0.99, 0.035, 0, 0.14, -0.25),
-    ball(GOLD, 0.06, 0, 0.44, -0.26), // Schildbuckel
+    shell(RED, 0.18, 0.3, 0.58, 0, 0.42, -0.24), // Scutum: 0,30 breit, 0,58 hoch
+    shell(GOLD, 0.19, 0.31, 0.035, 0, 0.71, -0.25), // goldener Rand oben und unten
+    shell(GOLD, 0.19, 0.31, 0.035, 0, 0.13, -0.25),
+    ball(GOLD, 0.05, 0, 0.42, -0.26), // Schildbuckel
     spear,
   );
 }
